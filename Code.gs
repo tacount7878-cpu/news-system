@@ -1,5 +1,5 @@
 /**
- * Google Apps Script - News fetcher (Clean Pipe) V1
+ * Google Apps Script - News fetcher (Clean Pipe) V1.1
  * - Fetches Google News RSS
  * - Filters last 24 hours
  * - Dedup by link
@@ -18,7 +18,7 @@ function autoFetchNews() {
   const now = new Date();
   const sinceMs = now.getTime() - 24 * 60 * 60 * 1000;
 
-  const query = "TSMC OR 0050 OR Tesla OR Bitcoin";
+  const query = "0050 OR 元大台灣50 OR 台灣50 OR 台股ETF OR 台積電 OR TSMC OR 台積 OR 2330 OR 00679B OR 元大美債20年 OR 00719B OR 元大美債1-3年 OR VT OR VWRA OR 全球ETF OR Tesla OR 特斯拉 OR TSLA OR 馬斯克 OR Google OR Alphabet OR 谷歌 OR IBKR OR 盈透證券 OR GLDM OR SPDR Gold MiniShares Trust OR SPDR Gold MiniShares OR SPDR Gold OR Bitcoin OR BTC OR 比特幣 OR 加密貨幣";
   const rssUrl =
     "https://news.google.com/rss/search?q=" +
     encodeURIComponent(query) +
