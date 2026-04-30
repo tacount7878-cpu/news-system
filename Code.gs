@@ -1,5 +1,5 @@
 /**
- * Google Apps Script - News fetcher (Clean Pipe)
+ * Google Apps Script - News fetcher (Clean Pipe) V1
  * - Fetches Google News RSS
  * - Filters last 24 hours
  * - Dedup by link
