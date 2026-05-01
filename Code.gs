@@ -1,3 +1,23 @@
+/**
+ * Google Apps Script - News fetcher V1.5 (Final)
+ * - Event filtering (POS/NEG/NEUTRAL gate)
+ * - Blacklist filtering
+ * - Title deduplication
+ * - Google News redirect normalization
+ * - Append-only write (stable)
+ */
+
+const EVENT_RULES = {
+  positive: [
+    "財報","營收","創新高","上修","調升","獲利","eps","接單","訂單","擴產","投資","資本支出",
+    "ai","先進製程","2奈米","3奈米","合作","合約","簽約","併購","etf流入","資金流入","升評"
+  ],
+  negative: [
+    "下修","衰退","減產","裁員","虧損","需求疲弱","庫存","去庫存","降評","罰款",
+    "監管","禁令","制裁","競爭加劇","良率問題","延遲","出貨不如預期","資金流出"
+  ]
+};
+
 function autoFetchNews() {
   const sheetName = "news";
   const headers = ["日期", "標籤", "標題", "連結", "發布時間"];
@@ -35,6 +55,9 @@ function autoFetchNews() {
       .replace(/\s+/g, "")
       .trim();
 
+    let event = classifyEvent_(cleanTitle);
+    if (!event) continue;
+
     if (processedTitles.has(cleanTitle) || existingLinks[link]) continue;
 
     let label = classifyAsset(cleanTitle);
@@ -53,6 +76,19 @@ function autoFetchNews() {
     rows.sort((a, b) => new Date(b[4]) - new Date(a[4]));
     sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
   }
+}
+
+function classifyEvent_(title) {
+  const t = (title || "").toLowerCase();
+  let pos = 0, neg = 0;
+
+  EVENT_RULES.positive.forEach(k => { if (t.includes(k)) pos++; });
+  EVENT_RULES.negative.forEach(k => { if (t.includes(k)) neg++; });
+
+  if (pos === 0 && neg === 0) return null;
+  if (pos > neg) return "POS";
+  if (neg > pos) return "NEG";
+  return "NEUTRAL";
 }
 
 function normalizeUrl_(url) {
