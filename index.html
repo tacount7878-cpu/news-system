@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今日</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { font-family: 'Noto Serif TC', serif; -webkit-font-smoothing: antialiased; background: #FAF8F3; color: #1F2937; }
+  body { padding: 6vh 6vw 8vh; min-height: 100vh; }
+
+  .date {
+    font-size: 0.85rem; letter-spacing: 0.15em;
+    opacity: 0.5; margin-bottom: 6vh; text-align: center;
+  }
+
+  .card {
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 2.2rem 0;
+  }
+  .card:last-child { border-bottom: none; }
+
+  .card-name {
+    font-size: 1.4rem; font-weight: 700;
+    margin-bottom: 0.6rem; letter-spacing: 0.02em;
+  }
+
+  .card-summary {
+    font-size: 1rem; line-height: 1.7;
+    opacity: 0.85; margin-bottom: 0.8rem;
+  }
+
+  .card-week {
+    font-size: 0.8rem; opacity: 0.5;
+    letter-spacing: 0.05em;
+  }
+
+  /* 平靜資產：整張卡片淡化 */
+  .card.quiet .card-name { opacity: 0.4; }
+  .card.quiet .card-summary { opacity: 0.4; font-style: italic; }
+
+  /* 有強訊號：加左側細線 */
+  .card.alert {
+    padding-left: 1rem;
+    border-left: 3px solid #B8860B;
+    margin-left: -1rem;
+  }
+
+  .error-box, .loading-box {
+    text-align: center; padding: 20vh 0;
+    opacity: 0.5; font-size: 0.9rem;
+  }
+
+  @media (min-width: 768px) {
+    body { max-width: 640px; margin: 0 auto; padding: 10vh 3rem; }
+    .card-name { font-size: 1.6rem; }
+    .card-summary { font-size: 1.05rem; }
+  }
+
+  .dev-bar {
+    position: fixed; top: 0.8rem; right: 0.8rem;
+    display: flex; gap: 0.4rem; opacity: 0.3; font-size: 0.7rem;
+  }
+  .dev-bar:hover { opacity: 1; }
+  .dev-bar input, .dev-bar button {
+    font-family: inherit; font-size: 0.7rem;
+    border: 1px solid rgba(0,0,0,0.15); background: rgba(255,255,255,0.7);
+    padding: 0.3rem 0.5rem; border-radius: 4px; color: inherit;
+  }
+  .dev-bar button { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="dev-bar">
+  <input type="date" id="dateInput" />
+  <button onclick="loadDate()">載入</button>
+  <button onclick="loadToday()">今天</button>
+</div>
+
+<div class="date" id="date">載入中⋯</div>
+<div id="content"><div class="loading-box">載入中⋯</div></div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbx8nIINe088BwUOqmUXEoS4uqb3iq55YQMj7XfsXXB6qR9Ffm28njn80Oanlv4Hax4_/exec";
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function render(data) {
+    document.getElementById('date').textContent = data.date;
+
+    const cards = data.assets.map(function(a) {
+      const isQuiet = !a.hasNewsToday && a.weekStrong === 0;
+      const hasAlert = a.weekStrong > 0;
+      const summary = a.today || (a.hasNewsToday ? '有新聞，待判讀' : '平靜');
+      const weekText = a.weekStrong > 0
+        ? '本週 ' + a.weekStrong + ' 則重大訊號'
+        : '本週無重大訊號';
+
+      const cls = 'card' + (isQuiet ? ' quiet' : '') + (hasAlert ? ' alert' : '');
+
+      return '<div class="' + cls + '">' +
+        '<div class="card-name">' + escapeHtml(a.name) + '</div>' +
+        '<div class="card-summary">' + escapeHtml(summary) + '</div>' +
+        '<div class="card-week">' + weekText + '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('content').innerHTML = cards;
+  }
+
+  function renderError(msg) {
+    document.getElementById('date').textContent = '錯誤';
+    document.getElementById('content').innerHTML =
+      '<div class="error-box">無法載入資料<br><br>' + escapeHtml(msg) + '</div>';
+  }
+
+  async function load(date) {
+    try {
+      const url = date ? API_URL + '?date=' + date : API_URL;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      render(data);
+    } catch (err) {
+      renderError(err.message);
+    }
+  }
+
+  function loadDate() {
+    const d = document.getElementById('dateInput').value;
+    if (d) load(d);
+  }
+
+  function loadToday() {
+    document.getElementById('dateInput').value = '';
+    load();
+  }
+
+  load();
+</script>
+
+</body>
+</html>
