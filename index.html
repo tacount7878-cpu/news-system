@@ -93,7 +93,12 @@
   }
 
   function render(data) {
-    document.getElementById('date').textContent = data.date;
+    if (!data || !Array.isArray(data.assets)) {
+      renderError('API 回傳格式錯誤');
+      return;
+    }
+
+    document.getElementById('date').textContent = data.date || '未指定日期';
 
     const cards = data.assets.map(function(a) {
       const isQuiet = !a.hasNewsToday && a.weekStrong === 0;
@@ -108,7 +113,7 @@
       return '<div class="' + cls + '">' +
         '<div class="card-name">' + escapeHtml(a.name) + '</div>' +
         '<div class="card-summary">' + escapeHtml(summary) + '</div>' +
-        '<div class="card-week">' + weekText + '</div>' +
+        '<div class="card-week">' + escapeHtml(weekText) + '</div>' +
       '</div>';
     }).join('');
 
@@ -123,7 +128,9 @@
 
   async function load(date) {
     try {
-      const url = date ? API_URL + '?date=' + date : API_URL;
+      const url = date
+        ? API_URL + '?date=' + encodeURIComponent(date) + '&t=' + Date.now()
+        : API_URL + '?t=' + Date.now();
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
